@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Audio Journal</title>
+</head>
+<body>
+  <h2>Upload Audio File</h2>
+  <input type="file" id="audioUpload" accept="audio/*">
+  <button onclick="uploadAudio()">Upload & Transcribe</button>
+
+  <p id="result"></p>
+
+  <script>
+    async function uploadAudio() {
+      const fileInput = document.getElementById('audioUpload');
+      const formData = new FormData();
+      formData.append("audio", fileInput.files[0]);
+
+      const res = await fetch("/upload-audio", {
+        method: "POST",
+        body: formData
+      });
+
+      const data = await res.json();
+      document.getElementById('result').innerText = data.translated_text;
+    }
+  </script>
+</body>
+</html>

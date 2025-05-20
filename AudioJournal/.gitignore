@@ -1,0 +1,14 @@
+# .gitignore
+
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+.DS_Store
+.env
+*.wav
+*.mp3
+*.ogg
+temp_*
