@@ -1,0 +1,276 @@
+
+/* --- Dashboard Specific Styles --- */
+
+/* Dashboard Header */
+.dashboard-header-container {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  max-width: 80rem;
+  margin: 0 auto;
+}
+
+@media (min-width: 768px) {
+  .dashboard-header-container {
+    padding: 2rem;
+  }
+}
+
+/* User Profile Section in Header */
+.user-profile-section {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  background: linear-gradient(to right, #ffffff, #edddff);
+  border-radius: 9999px; /* Fully rounded */
+  border: 1px solid #d8b4fe;
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.2);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.user-profile-section:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+.profile-pic-circle {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #7c3aed;
+}
+
+.username-display {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #4c1d95;
+}
+
+/* Dashboard Main Content Box */
+.dashboard-main-content-box {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start; /* Align to top of box */
+  flex-grow: 1;
+  text-align: center;
+  padding: 2rem;
+  margin: 2rem auto; /* Center the box */
+  max-width: 40rem; /* Max width for the box */
+  background-color: #ffffff;
+  border-radius: 1.5rem; /* Rounded corners for the box */
+  box-shadow: 0 10px 30px rgba(139, 92, 246, 0.15); /* Soft purple shadow */
+  min-height: 50vh; /* Ensure it has some height */
+}
+
+@media (min-width: 768px) {
+  .dashboard-main-content-box {
+    padding: 3rem;
+    margin-top: 4rem;
+    margin-bottom: 4rem;
+  }
+}
+
+/* Headings inside the dashboard box */
+.vibe-log-heading {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 0.5rem;
+}
+
+.vibe-log-subheading {
+  font-size: 1.125rem;
+  color: #4b5563;
+  margin-bottom: 2rem;
+}
+
+@media (min-width: 768px) {
+  .vibe-log-heading {
+    font-size: 2.5rem;
+  }
+  .vibe-log-subheading {
+    font-size: 1.25rem;
+  }
+}
+
+/* Content Type Selection Buttons */
+.content-type-buttons-container {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap; /* Allow wrapping on small screens */
+  justify-content: center;
+}
+
+.content-type-button {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 9999px; /* Pill shape */
+  border: 1px solid #d8b4fe;
+  background-color: #f3e8ff; /* Light purple background */
+  color: #7c3aed;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 5px rgba(139, 92, 246, 0.1);
+}
+
+.content-type-button:hover {
+  background-color: #e9d5ff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(139, 92, 246, 0.2);
+}
+
+.content-type-button.active-content-type-button {
+  background: linear-gradient(to right, #7c3aed, #4c1d95);
+  color: #ffffff;
+  border-color: #4c1d95;
+  box-shadow: 0 5px 15px rgba(76, 29, 149, 0.3);
+  transform: translateY(-2px);
+}
+
+/* Dynamic Input Area */
+.dynamic-input-area {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1rem;
+  border: 1px dashed #d8b4fe; /* Dashed border for the input area */
+  border-radius: 1rem;
+  background-color: #fdfbff;
+}
+
+/* Input Option Icons (Video, Audio, Text) */
+.input-option-icon {
+  width: 4rem;
+  height: 4rem;
+  color: #7c3aed; /* Purple color for icons */
+  margin-bottom: 0.5rem;
+}
+
+/* Action Buttons (Record/Upload) */
+.input-action-buttons {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.input-action-button, .upload-text-button {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #ffffff;
+  background: linear-gradient(to right, #7c3aed, #4c1d95);
+  border-radius: 0.75rem;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(76, 29, 149, 0.2);
+  transition: all 0.3s ease;
+}
+
+.input-action-button:hover, .upload-text-button:hover {
+  background: linear-gradient(to right, #6d28d9, #3b0764);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 12px rgba(76, 29, 149, 0.3);
+}
+
+/* Text Input Area */
+.text-input-area {
+  width: calc(100% - 2rem); /* Full width minus padding */
+  padding: 1rem;
+  border: 1px solid #d8b4fe;
+  border-radius: 0.75rem;
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem;
+  color: #374151;
+  background-color: #ffffff;
+  resize: vertical; /* Allow vertical resizing */
+  min-height: 100px;
+  max-width: 100%; /* Ensure it doesn't overflow */
+}
+
+.text-input-area::placeholder {
+  color: #9ca3af;
+}
+
+.text-input-area:focus {
+  outline: none;
+  border-color: #7c3aed;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+}
+
+
+/* --- Dashboard Footer --- */
+.dashboard-footer-container {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  padding: 1rem;
+  background-color: #ffffff;
+  border-top: 1px solid #eee;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05); /* Subtle shadow at the top */
+}
+
+.footer-nav-buttons-group {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  max-width: 40rem; /* Max width for the button group */
+  margin: 0 auto;
+}
+
+.footer-nav-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem 0.75rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #7c3aed; /* Purple color for icons/text */
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: color 0.3s ease, transform 0.3s ease;
+  border-radius: 0.5rem;
+}
+
+.footer-nav-button:hover {
+  color: #4c1d95;
+  transform: translateY(-2px);
+  background-color: #f3e8ff; /* Light hover background */
+}
+
+.footer-button-icon {
+  width: 1.75rem;
+  height: 1.75rem;
+}
+
+/* Media query for footer button text */
+.footer-button-text {
+  display: none; /* Hidden by default on small screens */
+}
+
+@media (min-width: 768px) { /* Adjust breakpoint as needed */
+  .footer-button-text {
+    display: block; /* Show text on larger screens */
+  }
+  .footer-nav-button {
+    padding: 0.75rem 1rem; /* More padding on larger screens */
+  }
+  .footer-button-icon {
+    width: 2rem;
+    height: 2rem;
+  }
+}

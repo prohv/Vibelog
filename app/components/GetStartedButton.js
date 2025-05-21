@@ -1,26 +1,26 @@
 "use client";
 
 import React, { useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { gsap } from 'gsap';
 
 const GetStartedButton = () => {
   const getStartedButtonRef = useRef(null);
+  const router = useRouter(); // 👈 Next.js navigation hook
 
   useEffect(() => {
-    if (getStartedButtonRef.current) {
-      gsap.fromTo(
-        getStartedButtonRef.current,
-        { opacity: 0, scale: 0.9, y: 10 },
-        {
-          opacity: 1,
-          scale: 1,
-          y: 0,
-          duration: 1,
-          ease: 'power3.out',
-          delay: 0.8,
-        }
-      );
-    }
+    gsap.fromTo(
+      getStartedButtonRef.current,
+      { opacity: 0, scale: 0.9, y: 10 },
+      {
+        opacity: 1,
+        scale: 1,
+        y: 0,
+        duration: 1,
+        ease: 'power3.out',
+        delay: 0.8,
+      }
+    );
 
     return () => {
       gsap.killTweensOf(getStartedButtonRef.current);
@@ -47,11 +47,17 @@ const GetStartedButton = () => {
     });
   };
 
+  const handleClick = () => {
+    // ✅ Navigate to /Dashboard
+    router.push('/Dashboard');
+  };
+
   return (
     <button
       ref={getStartedButtonRef}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
+      onClick={handleClick} // 👈 This triggers navigation
       className="get-started-button"
     >
       Get Started
