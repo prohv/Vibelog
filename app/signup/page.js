@@ -22,7 +22,7 @@ export default function SignupPage() {
       <div className={styles.signupCard}>
         <h1 className={styles.title}>Welcome</h1>
         <p className={styles.description}>
-          Create your account to get started. It's quick and easy!
+          Create your account to get started. It&apos;s quick and easy!
         </p>
         <form onSubmit={handleSubmit}>
           <input
