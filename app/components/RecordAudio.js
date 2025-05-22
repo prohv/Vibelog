@@ -3,25 +3,26 @@ import React, { useRef, useState, useEffect } from "react";
 export default function RecordAudio({ onResult }) {
   const [recording, setRecording] = useState(false);
   const [paused, setPaused] = useState(false);
-  const [mediaRecorder, setMediaRecorder] = useState(null);
   const [audioURL, setAudioURL] = useState(null);
   const [error, setError] = useState(null);
-  const [timer, setTimer] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [audioContext, setAudioContext] = useState(null);
   const [analyser, setAnalyser] = useState(null);
   const [animationId, setAnimationId] = useState(null);
+  const [seconds, setSeconds] = useState(0); // Timer starts at 0 seconds
+
   const canvasRef = useRef(null);
-  const timerRef = useRef(null);
+  const mediaRecorderRef = useRef(null); // Ref to store mediaRecorder
   const audioChunks = useRef([]);
   const streamRef = useRef(null);
-  const recorderRef = useRef(null); // <-- Add this at the top
+  const intervalRef = useRef(null);
 
   useEffect(() => {
+    // Cleanup when component is unmounted
     return () => {
+      clearInterval(intervalRef.current); // Clear interval
       if (audioContext) audioContext.close();
       if (animationId) cancelAnimationFrame(animationId);
-      if (timerRef.current) clearInterval(timerRef.current);
       if (streamRef.current) streamRef.current.getTracks().forEach(track => track.stop());
     };
   }, [audioContext, animationId]);
@@ -61,83 +62,91 @@ export default function RecordAudio({ onResult }) {
     setAudioURL(null);
     setRecording(true);
     setPaused(false);
-    setTimer(0);
     audioChunks.current = [];
+    setSeconds(0); // Reset timer to 0 when starting
+
+    // Start the timer with setInterval
+    intervalRef.current = setInterval(() => {
+      setSeconds((prev) => prev + 1); // Increment timer every second
+    }, 1000);
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      // Always use audio/webm for compatibility (as before)
+      streamRef.current = stream; // Store stream reference
       const recorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
-      recorderRef.current = recorder; // <-- Use recorderRef instead of mediaRecorderRef
+      mediaRecorderRef.current = recorder;
+
       recorder.ondataavailable = (e) => {
         if (e.data.size > 0) audioChunks.current.push(e.data);
       };
       recorder.onstop = () => {
+        // Clean up audio context and animation
         if (audioContext) audioContext.close();
         if (animationId) cancelAnimationFrame(animationId);
+
+        // Process audio blob
         const audioBlob = new Blob(audioChunks.current, { type: "audio/webm" });
         setAudioURL(URL.createObjectURL(audioBlob));
-        uploadAudio(audioBlob); // Always upload as webm
+        uploadAudio(audioBlob);
+
+        // Stop stream tracks
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach(track => track.stop());
+        }
       };
-      recorder.onpause = () => setPaused(true);
-      recorder.onresume = () => setPaused(false);
+      recorder.onpause = () => {
+        setPaused(true);
+        clearInterval(intervalRef.current); // Pause the timer
+      };
+      recorder.onresume = () => {
+        setPaused(false);
+        intervalRef.current = setInterval(() => {
+          setSeconds((prev) => prev + 1); // Resume the timer
+        }, 1000);
+      };
       recorder.start();
-      setMediaRecorder(recorder);
-      setRecording(true);
-      timerRef.current = setInterval(() => {
-        setTimer(t => t + 1);
-      }, 1000);
-      // Setup waveform
-      const ctx = new window.AudioContext();
-      setAudioContext(ctx);
-      const src = ctx.createMediaStreamSource(stream);
-      const analyserNode = ctx.createAnalyser();
-      analyserNode.fftSize = 2048;
-      src.connect(analyserNode);
-      setAnalyser(analyserNode);
-      setAnimationId(requestAnimationFrame(drawWaveform));
     } catch (err) {
       setError("Microphone access denied or unavailable.");
       setRecording(false);
-      // Log the actual error for debugging
       console.error("getUserMedia error:", err);
     }
   };
 
   // Stop recording
   const stopRecording = () => {
-    if (mediaRecorder) {
-      mediaRecorder.stop();
+    if (mediaRecorderRef.current) {
+      mediaRecorderRef.current.stop();
       setRecording(false);
       setPaused(false);
-      clearInterval(timerRef.current);
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
-      }
+      clearInterval(intervalRef.current); // Stop the timer
     }
   };
 
-  // Pause
+  // Pause recording
   const pauseRecording = () => {
-    if (mediaRecorder && mediaRecorder.state === 'recording') {
-      mediaRecorder.pause();
-      clearInterval(timerRef.current);
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      mediaRecorderRef.current.pause();
+      clearInterval(intervalRef.current); // Stop the timer when paused
     }
   };
 
-  // Resume
+  // Resume recording
   const resumeRecording = () => {
-    if (mediaRecorder && mediaRecorder.state === 'paused') {
-      mediaRecorder.resume();
-      timerRef.current = setInterval(() => setTimer(t => t + 1), 1000);
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'paused') {
+      mediaRecorderRef.current.resume();
+      intervalRef.current = setInterval(() => {
+        setSeconds((prev) => prev + 1); // Resume the timer
+      }, 1000);
     }
   };
 
-  // Upload
+  // Upload audio to backend and convert it
   const uploadAudio = async (audioBlob) => {
     setIsUploading(true);
     setError(null);
     const formData = new FormData();
     formData.append("file", audioBlob, "recording.webm");
+
     try {
       const response = await fetch("http://127.0.0.1:8000/mic-audio", {
         method: "POST",
@@ -187,7 +196,6 @@ export default function RecordAudio({ onResult }) {
             disabled={isUploading}
             className="input-action-button"
           >
-            <svg width="22" height="22" fill="none" viewBox="0 0 24 24"><path fill="#fff" d="M12 15a3.5 3.5 0 0 0 3.5-3.5V7a3.5 3.5 0 0 0-7 0v4.5A3.5 3.5 0 0 0 12 15Zm5-3.5a1 1 0 1 1 2 0c0 4.08-3.06 7.44-7 7.93V22a1 1 0 1 1-2 0v-2.57c-3.94-.49-7-3.85-7-7.93a1 1 0 1 1 2 0c0 3.31 2.69 6 6 6s6-2.69 6-6Z"/></svg>
             Start Recording
           </button>
         )}
@@ -199,7 +207,6 @@ export default function RecordAudio({ onResult }) {
               disabled={isUploading}
               className="input-action-button"
             >
-              <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" rx="2" fill="#fff"/><rect x="14" y="4" width="4" height="16" rx="2" fill="#fff"/></svg>
               Pause
             </button>
             <button
@@ -208,7 +215,6 @@ export default function RecordAudio({ onResult }) {
               disabled={isUploading}
               className="input-action-button"
             >
-              <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="3" fill="#fff"/></svg>
               Stop
             </button>
           </>
@@ -221,7 +227,6 @@ export default function RecordAudio({ onResult }) {
               disabled={isUploading}
               className="input-action-button"
             >
-              <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20" fill="#fff"/></svg>
               Resume
             </button>
             <button
@@ -230,7 +235,6 @@ export default function RecordAudio({ onResult }) {
               disabled={isUploading}
               className="input-action-button"
             >
-              <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="3" fill="#fff"/></svg>
               Stop
             </button>
           </>
@@ -239,7 +243,7 @@ export default function RecordAudio({ onResult }) {
       {recording && (
         <>
           <div style={{ color: '#6366f1', fontWeight: 500, marginBottom: 8, fontSize: 16 }}>
-            {paused ? 'Paused' : 'Recording...'} {timer}s
+            {paused ? 'Paused' : 'Recording...'} {Math.floor(seconds / 60)}:{seconds % 60 < 10 ? `0${seconds % 60}` : seconds % 60}
           </div>
           <canvas
             ref={canvasRef}
