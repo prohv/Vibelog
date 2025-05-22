@@ -1,106 +1,141 @@
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, UploadFile, Form
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 from faster_whisper import WhisperModel
-from transformers import pipeline
-from nltk.tokenize import sent_tokenize
-import nltk
-import shutil, os, re
-
-# Download NLTK Punkt tokenizer for sentence splitting
-nltk.download("punkt_tab")
-nltk.download("punkt")
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
+import spacy
+import torch
+import os
 
 app = FastAPI()
 
-# Load Whisper model
-model = WhisperModel("large-v2", compute_type="int8", device="cpu")
+# Add CORS middleware here
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # Frontend URL
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-# Load HuggingFace sentiment analysis pipeline
-sentiment_pipeline = pipeline("sentiment-analysis")
-
-# Serve static HTML files
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-@app.get("/", response_class=HTMLResponse)
-def home():
-    with open("static/index.html", "r") as f:
-        return f.read()
+# Load models
+whisper_model = WhisperModel("large-v3", device="cpu")  # Use "cuda" if GPU
+nlp = spacy.load("en_core_web_sm")
 
-def further_split(sentence):
-    # Split on 'and', 'but', and commas, but keep the delimiters for context
-    # This is a simple heuristic and can be improved further
-    clauses = re.split(r'\s*(?:and|but|,)\s*', sentence)
-    return [clause.strip() for clause in clauses if clause.strip()]
+tokenizer = AutoTokenizer.from_pretrained("distilbert-base-uncased-finetuned-sst-2-english")
+sentiment_model = AutoModelForSequenceClassification.from_pretrained("distilbert-base-uncased-finetuned-sst-2-english")
 
-def classify_events_and_mood(transcript: str):
-    sentences = sent_tokenize(transcript)
-    all_clauses = []
-    for sentence in sentences:
-        all_clauses.extend(further_split(sentence))
+# Keywords
+POSITIVE_EVENTS = {"achieved", "completed", "passed", "won", "improved", "exercise", "jog", "ran", "meditated"}
+NEGATIVE_EVENTS = {"failed", "forgot", "missed", "struggled", "argument", "sick", "exhausted"}
 
-    classified_events = []
-    positive_count = 0
-    negative_count = 0
-    neutral_count = 0
+def smart_split(text: str) -> list:
+    doc = nlp(text)
+    clauses = []
+    current_clause = []
+    for sent in doc.sents:
+        for token in sent:
+            if token.dep_ in ("cc", "mark") or token.text.lower() in {"but", "although", "however"}:
+                if current_clause:
+                    clauses.append(" ".join(current_clause).strip())
+                    current_clause = []
+            current_clause.append(token.text)
+        if current_clause:
+            clauses.append(" ".join(current_clause).strip())
+            current_clause = []
+    return [c for c in clauses if 10 < len(c) < 500]
 
-    for clause in all_clauses:
-        result = sentiment_pipeline(clause)[0]
-        label = result["label"]
-        score = result["score"]
+def analyze_sentiment(text: str) -> tuple:
+    text_lower = text.lower()
+    if any(kw in text_lower for kw in POSITIVE_EVENTS):
+        return "POSITIVE", 0.99
+    if any(kw in text_lower for kw in NEGATIVE_EVENTS):
+        return "NEGATIVE", 0.99
+    inputs = tokenizer(text, return_tensors="pt", truncation=True, max_length=512)
+    with torch.no_grad():
+        outputs = sentiment_model(**inputs)
+    probs = torch.nn.functional.softmax(outputs.logits, dim=-1)
+    confidence, prediction = torch.max(probs, dim=1)
+    return ("POSITIVE" if prediction.item() == 1 else "NEGATIVE", confidence.item())
 
-        # Consider low confidence predictions as neutral
-        if score < 0.7:
-            label = "NEUTRAL"
-            neutral_count += 1
-        elif label == "POSITIVE":
-            positive_count += 1
-        elif label == "NEGATIVE":
-            negative_count += 1
-
-        classified_events.append({
+def process_audio(path: str):
+    segments, _ = whisper_model.transcribe(path)
+    transcript = " ".join(segment.text for segment in segments)
+    clauses = smart_split(transcript)
+    analysis = []
+    counts = {"POSITIVE": 0, "NEGATIVE": 0}
+    for clause in clauses:
+        sentiment, confidence = analyze_sentiment(clause)
+        analysis.append({
             "sentence": clause,
-            "label": label,
-            "confidence": round(score, 2)
+            "label": sentiment,
+            "confidence": f"{confidence*100:.0f}%"
         })
-
-    # Mood summary logic
-    if positive_count > negative_count and positive_count > neutral_count:
-        mood = "Positive"
-        message = "Kudos for keeping your day happy! Keep spreading that positive energy!"
-    elif negative_count > positive_count and negative_count > neutral_count:
-        mood = "Negative"
-        message = "Tomorrow is a new day with new opportunities. Be kind to yourself and focus on the positive things ahead."
-    else:
-        mood = "Neutral"
-        message = "You've maintained a balanced day. Try to cherish the positive moments and learn from the challenging ones."
-
+        counts[sentiment] += 1
+    overall_mood = "POSITIVE" if counts["POSITIVE"] > counts["NEGATIVE"] else "NEGATIVE"
+    motivational_message = (
+        "Great job! Keep up the positive vibes!" if overall_mood == "POSITIVE"
+        else "It's okay to have tough days. Tomorrow is a new start!"
+    )
     return {
-        "classified_events": classified_events,
-        "summary": {
-            "positive": positive_count,
-            "negative": negative_count,
-            "neutral": neutral_count,
-            "overall_mood": mood,
-            "motivational_message": message
+        "translated_text": transcript,
+        "sentiment_analysis": {
+            "classified_events": analysis,
+            "summary": {
+                "positive": counts["POSITIVE"],
+                "negative": counts["NEGATIVE"],
+                "neutral": 0,  # You can add neutral logic if needed
+                "overall_mood": overall_mood,
+                "motivational_message": motivational_message
+            }
         }
     }
 
+# Upload audio from file
 @app.post("/upload-audio")
-async def upload_audio(audio: UploadFile = File(...)):
+async def analyze_audio(audio: UploadFile = File(...)):
+    import os
     temp_path = f"temp_{audio.filename}"
-    with open(temp_path, "wb") as buffer:
-        shutil.copyfileobj(audio.file, buffer)
-
-    # Transcription (use translation if needed)
-    segments, _ = model.transcribe(temp_path, task="translate")
-    transcript = " ".join([seg.text for seg in segments])
+    with open(temp_path, "wb") as f:
+        f.write(await audio.read())
+    result = process_audio(temp_path)
     os.remove(temp_path)
+    return result
 
-    # Tonal analysis
-    sentiment_result = classify_events_and_mood(transcript)
+# Real-time mic input as blob (.webm/.wav)
+@app.post("/mic-audio")
+async def mic_audio(file: UploadFile = File(...)):
+    import subprocess
+    import uuid
+    temp_path = f"mic_{uuid.uuid4()}.webm"
+    wav_path = temp_path.replace('.webm', '.wav')
+    with open(temp_path, "wb") as f:
+        f.write(await file.read())
+    ffmpeg_cmd = ["ffmpeg", "-y", "-i", temp_path, "-ar", "16000", "-ac", "1", wav_path]
+    try:
+        try:
+            result = subprocess.run(ffmpeg_cmd, check=True, capture_output=True)
+        except FileNotFoundError:
+            ffmpeg_cmd[0] = r"C:\\ffmpeg\\bin\\ffmpeg.exe"
+            result = subprocess.run(ffmpeg_cmd, check=True, capture_output=True)
+        result = process_audio(wav_path)
+    except Exception as e:
+        os.remove(temp_path)
+        if os.path.exists(wav_path):
+            os.remove(wav_path)
+        # Print ffmpeg error output for debugging
+        error_msg = str(e)
+        if hasattr(e, 'stderr'):
+            error_msg = e.stderr.decode()
+        return {"error": f"Audio conversion failed: {error_msg}"}
+    os.remove(temp_path)
+    os.remove(wav_path)
+    return result
 
-    return {
-        "translated_text": transcript,
-        "sentiment_analysis": sentiment_result
-    }
+@app.get("/", response_class=HTMLResponse)
+async def home():
+    with open("static/index.html", "r") as f:
+        return HTMLResponse(f.read())
