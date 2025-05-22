@@ -1,28 +1,214 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Audio Journal</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AudioJournal - Mood Analyzer</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0 auto;
+      padding: 20px;
+      max-width: 800px;
+      line-height: 1.6;
+      color: #333;
+    }
+    h1 {
+      color: #2c3e50;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .upload-section {
+      background-color: #f5f7fa;
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 30px;
+      text-align: center;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    #audioInput {
+      margin-right: 10px;
+      padding: 8px;
+    }
+    button {
+      background-color: #3498db;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #2980b9;
+    }
+    #result {
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .transcript {
+      background-color: #f9f9f9;
+      padding: 15px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+      line-height: 1.6;
+    }
+    .positive { 
+      color: #27ae60; 
+      background-color: rgba(39, 174, 96, 0.1);
+      padding: 10px;
+      border-radius: 5px;
+      margin: 8px 0;
+    }
+    .negative { 
+      color: #c0392b; 
+      background-color: rgba(192, 57, 43, 0.1);
+      padding: 10px;
+      border-radius: 5px;
+      margin: 8px 0;
+    }
+    .neutral { 
+      color: #7f8c8d; 
+      background-color: rgba(127, 140, 141, 0.1);
+      padding: 10px;
+      border-radius: 5px;
+      margin: 8px 0;
+    }
+    .summary { 
+      margin-top: 30px; 
+      padding: 20px;
+      background-color: #f2f2f2;
+      border-radius: 8px;
+    }
+    .motivational-message {
+      font-style: italic;
+      margin-top: 15px;
+      padding: 15px;
+      border-left: 4px solid #3498db;
+      background-color: #ebf5fb;
+    }
+    .loading {
+      text-align: center;
+      margin-top: 15px;
+      display: none;
+      font-style: italic;
+      color: #666;
+    }
+    h3, h4 {
+      color: #2c3e50;
+      margin-top: 20px;
+    }
+  </style>
 </head>
 <body>
-  <h2>Upload Audio File</h2>
-  <input type="file" id="audioUpload" accept="audio/*">
-  <button onclick="uploadAudio()">Upload & Transcribe</button>
+  <h1>AudioJournal - Mood Analyzer</h1>
+  
+  <div class="upload-section">
+    <input type="file" id="audioInput" accept="audio/*" />
+    <button onclick="uploadAudio()">Upload & Analyze</button>
+    <div id="loading" class="loading">Analyzing your audio... This may take a moment.</div>
+  </div>
 
-  <p id="result"></p>
+  <div id="result"></div>
 
   <script>
     async function uploadAudio() {
-      const fileInput = document.getElementById('audioUpload');
+      const input = document.getElementById('audioInput');
+      const file = input.files[0];
+      if (!file) {
+        alert("Please select an audio file");
+        return;
+      }
+
+      // Show loading indicator
+      document.getElementById('loading').style.display = 'block';
+      document.getElementById('result').innerHTML = '';
+
       const formData = new FormData();
-      formData.append("audio", fileInput.files[0]);
+      formData.append("audio", file);
 
-      const res = await fetch("/upload-audio", {
-        method: "POST",
-        body: formData
-      });
+      try {
+        const response = await fetch("/upload-audio", {
+          method: "POST",
+          body: formData
+        });
 
-      const data = await res.json();
-      document.getElementById('result').innerText = data.translated_text;
+        const data = await response.json();
+
+        // Hide loading indicator
+        document.getElementById('loading').style.display = 'none';
+
+        const resultDiv = document.getElementById("result");
+        resultDiv.innerHTML = `
+          <h3>Your Transcript</h3>
+          <div class="transcript">${data.translated_text}</div>
+        `;
+
+        if (data.sentiment_analysis) {
+          // Group events by sentiment
+          const positiveEvents = [];
+          const negativeEvents = [];
+          const neutralEvents = [];
+          
+          data.sentiment_analysis.classified_events.forEach(e => {
+            if (e.label === "POSITIVE") {
+              positiveEvents.push(e);
+            } else if (e.label === "NEGATIVE") {
+              negativeEvents.push(e);
+            } else {
+              neutralEvents.push(e);
+            }
+          });
+
+          // Render events by category
+          resultDiv.innerHTML += `<h3>Sentiment Analysis</h3>`;
+          
+          if (positiveEvents.length > 0) {
+            resultDiv.innerHTML += `<h4>Positive Events (${positiveEvents.length})</h4>`;
+            positiveEvents.forEach(e => {
+              resultDiv.innerHTML += `<div class="positive">${e.sentence}</div>`;
+            });
+          }
+          
+          if (negativeEvents.length > 0) {
+            resultDiv.innerHTML += `<h4>Negative Events (${negativeEvents.length})</h4>`;
+            negativeEvents.forEach(e => {
+              resultDiv.innerHTML += `<div class="negative">${e.sentence}</div>`;
+            });
+          }
+          
+          if (neutralEvents.length > 0) {
+            resultDiv.innerHTML += `<h4>Neutral Events (${neutralEvents.length})</h4>`;
+            neutralEvents.forEach(e => {
+              resultDiv.innerHTML += `<div class="neutral">${e.sentence}</div>`;
+            });
+          }
+
+          const summary = data.sentiment_analysis.summary;
+
+          resultDiv.innerHTML += `
+            <div class="summary">
+              <h3>Your Mood Summary</h3>
+              <p>Positive Events: ${summary.positive}</p>
+              <p>Negative Events: ${summary.negative}</p>
+              <p>Neutral Events: ${summary.neutral}</p>
+              <p>Overall Mood: <strong>${summary.overall_mood}</strong></p>
+              <div class="motivational-message">${summary.motivational_message}</div>
+            </div>
+          `;
+        }
+      } catch (error) {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('result').innerHTML = `
+          <div class="negative">
+            Error processing audio. Please try again.
+          </div>
+        `;
+        console.error("Error:", error);
+      }
     }
   </script>
 </body>
