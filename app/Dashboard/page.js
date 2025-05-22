@@ -4,10 +4,12 @@
 import './Dashboard.css';
 import { useEffect, useState } from 'react';
 import { gsap } from 'gsap';
+import { useRouter } from 'next/navigation';
 import DashboardHeader from '../components/DashboardHeader'; // Using the new DashboardHeader
 import Footer from '../components/Footer'; // Reusing the existing Footer, but we'll modify its content
 
 export default function Dashboard() {
+  const router = useRouter();
   const [selectedContentType, setSelectedContentType] = useState('text'); // Default to text input
 
   useEffect(() => {
@@ -177,7 +179,7 @@ export default function Dashboard() {
             </svg>
             <span className="footer-button-text">Review</span>
           </button>
-          <button className="footer-nav-button">
+          <button className="footer-nav-button" onClick={() => router.push('/account')}>
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
