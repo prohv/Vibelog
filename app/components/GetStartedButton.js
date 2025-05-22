@@ -9,8 +9,10 @@ const GetStartedButton = () => {
   const router = useRouter(); // 👈 Next.js navigation hook
 
   useEffect(() => {
+    const btn = getStartedButtonRef.current;
+
     gsap.fromTo(
-      getStartedButtonRef.current,
+      btn,
       { opacity: 0, scale: 0.9, y: 10 },
       {
         opacity: 1,
@@ -23,9 +25,10 @@ const GetStartedButton = () => {
     );
 
     return () => {
-      gsap.killTweensOf(getStartedButtonRef.current);
+      gsap.killTweensOf(btn); // ✅ using a safe snapshot of the ref
     };
   }, []);
+
 
   const handleMouseEnter = () => {
     gsap.to(getStartedButtonRef.current, {

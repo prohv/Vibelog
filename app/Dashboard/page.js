@@ -115,7 +115,7 @@ export default function Dashboard() {
 
       <main className="main-content dashboard-main-content-box">
         <h1 className="vibe-log-heading">How was your day? 🤔</h1>
-        <p className="vibe-log-subheading">Let's Log your Vibe</p>
+        <p className="vibe-log-subheading">Let&#39;s Log your Vibe</p>
 
         <div className="content-type-buttons-container">
           <button
