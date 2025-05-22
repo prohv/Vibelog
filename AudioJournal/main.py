@@ -108,11 +108,31 @@ async def analyze_audio(audio: UploadFile = File(...)):
 # Real-time mic input as blob (.webm/.wav)
 @app.post("/mic-audio")
 async def mic_audio(file: UploadFile = File(...)):
-    temp_path = f"mic_{file.filename}"
+    import subprocess
+    import uuid
+    temp_path = f"mic_{uuid.uuid4()}.webm"
+    wav_path = temp_path.replace('.webm', '.wav')
     with open(temp_path, "wb") as f:
         f.write(await file.read())
-    result = process_audio(temp_path)
+    ffmpeg_cmd = ["ffmpeg", "-y", "-i", temp_path, "-ar", "16000", "-ac", "1", wav_path]
+    try:
+        try:
+            result = subprocess.run(ffmpeg_cmd, check=True, capture_output=True)
+        except FileNotFoundError:
+            ffmpeg_cmd[0] = r"C:\\ffmpeg\\bin\\ffmpeg.exe"
+            result = subprocess.run(ffmpeg_cmd, check=True, capture_output=True)
+        result = process_audio(wav_path)
+    except Exception as e:
+        os.remove(temp_path)
+        if os.path.exists(wav_path):
+            os.remove(wav_path)
+        # Print ffmpeg error output for debugging
+        error_msg = str(e)
+        if hasattr(e, 'stderr'):
+            error_msg = e.stderr.decode()
+        return {"error": f"Audio conversion failed: {error_msg}"}
     os.remove(temp_path)
+    os.remove(wav_path)
     return result
 
 @app.get("/", response_class=HTMLResponse)
