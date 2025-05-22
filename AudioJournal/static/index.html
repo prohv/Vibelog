@@ -1,28 +1,68 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Audio Journal</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AudioJournal</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+    }
+    #result {
+      margin-top: 20px;
+    }
+    .positive { color: green; }
+    .negative { color: red; }
+    .summary { font-weight: bold; margin-top: 10px; }
+  </style>
 </head>
 <body>
-  <h2>Upload Audio File</h2>
-  <input type="file" id="audioUpload" accept="audio/*">
+  <h1>Upload Audio File</h1>
+  <input type="file" id="audioInput" />
   <button onclick="uploadAudio()">Upload & Transcribe</button>
 
-  <p id="result"></p>
+  <div id="result"></div>
 
   <script>
     async function uploadAudio() {
-      const fileInput = document.getElementById('audioUpload');
-      const formData = new FormData();
-      formData.append("audio", fileInput.files[0]);
+      const input = document.getElementById('audioInput');
+      const file = input.files[0];
+      if (!file) {
+        alert("Please select an audio file");
+        return;
+      }
 
-      const res = await fetch("/upload-audio", {
+      const formData = new FormData();
+      formData.append("audio", file);
+
+      const response = await fetch("/upload-audio", {
         method: "POST",
         body: formData
       });
 
-      const data = await res.json();
-      document.getElementById('result').innerText = data.translated_text;
+      const data = await response.json();
+
+      const resultDiv = document.getElementById("result");
+      resultDiv.innerHTML = `<h3>Transcript</h3><p>${data.translated_text}</p>`;
+
+      if (data.sentiment_analysis) {
+        const events = data.sentiment_analysis.classified_events
+          .map(e => `<p class="${e.label.toLowerCase()}">${e.label}: ${e.sentence} (confidence: ${e.confidence})</p>`)
+          .join("");
+
+        const summary = data.sentiment_analysis.summary;
+
+        resultDiv.innerHTML += `
+          <h3>Sentiment Analysis</h3>
+          ${events}
+          <div class="summary">
+            <p>Positive Events: ${summary.positive}</p>
+            <p>Negative Events: ${summary.negative}</p>
+            <p>Overall Mood: <strong>${summary.overall_mood}</strong></p>
+          </div>
+        `;
+      }
     }
   </script>
 </body>
