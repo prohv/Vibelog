@@ -4,6 +4,8 @@ import { useRouter } from 'next/navigation';
 import { FaHome } from 'react-icons/fa';
 import styles from './page.module.css';
 import DashboardHeaderSignup from '../components/DashboardHeaderSignup'; 
+import { supabase } from '../../lib/supabaseClient';
+
 
 export default function SignupPage() {
   const [formData, setFormData] = useState({ nickname: '', email: '', password: '' });
@@ -13,10 +15,27 @@ export default function SignupPage() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log('Form submitted:', formData);
-  };
+  const handleSubmit = async (e) => {
+    e.preventDefault(); // Prevent form from refreshing the page
+  
+    const { email, password, nickname } = formData;
+  
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { nickname }, // Optional metadata saved with the user
+      },
+    });
+  
+    if (error) {
+      console.error('❌ Error signing up:', error.message);
+    } else {
+      console.log('✅ User signed up:', data);
+      alert('Check your email for verification!');
+      router.push('/Dashboard'); // or wherever you want to redirect
+    }
+  };  
 
   return (
     <div className={styles.signupWrapper}>

@@ -2,15 +2,32 @@
 
 import './DashboardHeader.css';
 import Image from 'next/image';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { supabase } from '../../lib/supabaseClient';
 
-export default function DashboardHeader({ username = "VibeMaster", profilePicUrl = "https://placehold.co/40x40/7c3aed/ffffff.jpg?text=VM" }) {
+export default function DashboardHeader({profilePicUrl = "https://i.ibb.co/CsWpxHvL/purplecatpfp.jpg" }) {
   // Note: .heart-logo animation is handled in page.js via GSAP.
   // Pulse-glow animation for .heart-logo is defined in global.css (not provided).
   // No 'container' variable or class is used in this component.
 
   const router = useRouter();
+  const [nickname, setNickname] = useState('VibeMaster');
+
+  useEffect(() => {
+    const fetchUserNickname = async () => {
+      const { data, error } = await supabase.auth.getUser();
+
+      if (error) {
+        console.error("❌ Failed to fetch user:", error.message);
+      } else {
+        const nicknameFromMeta = data?.user?.user_metadata?.nickname;
+        setNickname(nicknameFromMeta || "VibeMaster");
+      }
+    };
+
+    fetchUserNickname();
+  }, []);
 
   return (
     <header className="dashboard-header-container">
@@ -38,7 +55,7 @@ export default function DashboardHeader({ username = "VibeMaster", profilePicUrl
           width={40}
           height={40}
         />
-        <span className="username-display">{username}</span>
+        <span className="username-display">{nickname}</span>
       </div>
     </header>
   );
