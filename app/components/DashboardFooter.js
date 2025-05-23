@@ -25,7 +25,7 @@ export default function DashboardFooter() {
           <span className="footer-button-text">Audio Summary</span>
         </button>
 
-        <button className="footer-nav-button">
+        <button className="footer-nav-button" onClick={() => router.push('/review')}>
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="footer-button-icon">
             <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V2zm-4 9h-4V7h-2v4H6v2h4v4h2v-4h4v-2z" />
           </svg>

@@ -52,6 +52,71 @@ export default function Dashboard() {
     };
   }, []);
 
+  // Handle video upload function
+  const handleUploadVideo = async () => {
+    try {
+      if (!videoUrl) {
+        toast.error('Please enter a video URL.', { duration: 3000 });
+        return;
+      }
+
+      setUploading(true);
+      toast.loading('Uploading & processing video...', { duration: Infinity });
+
+      const backendUrl = `${process.env.NEXT_PUBLIC_BACKEND_URL}/analyze`;
+      const res = await fetch(backendUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ video_url: videoUrl }),
+      });
+
+      if (!res.ok) throw new Error('Backend error');
+      const result = await res.json();
+      if (result.error) throw new Error(result.error);
+      if (!result || !result.summary || !result.insights || !result.dominant_emotion) {
+        throw new Error('Invalid response from backend');
+      }
+
+      const { data: session } = await supabase.auth.getUser();
+      const user_id = session?.user?.id;
+      if (!user_id) {
+        toast.dismiss();
+        toast.error('User not authenticated. Please log in.', { duration: 3000 });
+        setUploading(false);
+        return;
+      }
+
+      const { error: dbError } = await supabase.from('video_results').insert([
+        {
+          user_id,
+          video_url: videoUrl,
+          summary: result.summary,
+          insights: result.insights,
+          dominant_emotion: result.dominant_emotion,
+          date: result.date,
+        },
+      ]);
+
+      if (dbError) {
+        console.error('❌ DB Error:', dbError);
+        toast.dismiss();
+        toast.error('Error saving to database.', { duration: 3000 });
+      } else {
+        toast.dismiss();
+        toast.success('✅ Video processed and saved! View it in Summary.', { duration: 3000 });
+      }
+    } catch (err) {
+      console.error('❌ Upload error:', err);
+      toast.dismiss();
+      toast.error(`Upload failed: ${err.message}`, { duration: 3000 });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+
   // HandleAudio upload function
   const handleUploadAudio = async () => {
     try {
