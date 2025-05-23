@@ -1,5 +1,4 @@
 
-/* --- Dashboard Footer --- */
 .dashboard-footer-container {
     position: relative;
     z-index: 10;
@@ -28,7 +27,7 @@
     background: none;
     border: none;
     cursor: pointer;
-    color: #7c3aed; /* Purple color for icons/text */
+    color: #7c3aed; 
     font-size: 0.875rem;
     font-weight: 500;
     transition: color 0.3s ease, transform 0.3s ease;
@@ -38,7 +37,7 @@
   .footer-nav-button:hover {
     color: #4c1d95;
     transform: translateY(-2px);
-    background-color: #f3e8ff; /* Light hover background */
+    background-color: #f3e8ff; 
   }
   
   .footer-button-icon {
@@ -46,17 +45,16 @@
     height: 1.75rem;
   }
   
-  /* Media query for footer button text */
   .footer-button-text {
-    display: none; /* Hidden by default on small screens */
+    display: none; 
   }
   
-  @media (min-width: 768px) { /* Adjust breakpoint as needed */
+  @media (min-width: 768px) { 
     .footer-button-text {
-      display: block; /* Show text on larger screens */
+      display: block; 
     }
     .footer-nav-button {
-      padding: 0.75rem 1rem; /* More padding on larger screens */
+      padding: 0.75rem 1rem; 
     }
     .footer-button-icon {
       width: 2rem;

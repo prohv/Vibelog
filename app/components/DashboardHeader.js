@@ -7,9 +7,6 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabaseClient';
 
 export default function DashboardHeader({profilePicUrl = "https://i.ibb.co/CsWpxHvL/purplecatpfp.jpg" }) {
-  // Note: .heart-logo animation is handled in page.js via GSAP.
-  // Pulse-glow animation for .heart-logo is defined in global.css (not provided).
-  // No 'container' variable or class is used in this component.
 
   const router = useRouter();
   const [nickname, setNickname] = useState('VibeMaster');

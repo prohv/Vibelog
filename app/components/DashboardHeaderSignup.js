@@ -2,13 +2,9 @@
 
 import Image from 'next/image';
 import React from 'react';
-import { gsap } from 'gsap'; // Assuming gsap is used for general animations
 import { useRouter } from 'next/navigation';
 
 export default function DashboardHeader({ username = "VibeMaster", profilePicUrl = "https://placehold.co/40x40/7c3aed/ffffff.jpg?text=VM" }) {
-  // Note: .heart-logo animation is handled in page.js via GSAP.
-  // Pulse-glow animation for .heart-logo is defined in global.css (not provided).
-  // No 'container' variable or class is used in this component.
 
   const router = useRouter();
 

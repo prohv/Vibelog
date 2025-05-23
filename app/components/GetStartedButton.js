@@ -51,7 +51,6 @@ const GetStartedButton = () => {
   };
 
   const handleClick = () => {
-    // ✅ Navigate to /Dashboard
     router.push('/Dashboard');
   };
 
@@ -60,7 +59,7 @@ const GetStartedButton = () => {
       ref={getStartedButtonRef}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      onClick={handleClick} // 👈 This triggers navigation
+      onClick={handleClick}
       className="get-started-button"
     >
       Get Started
