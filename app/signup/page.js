@@ -25,6 +25,7 @@ export default function SignupPage() {
       password,
       options: {
         data: { nickname }, // Optional metadata saved with the user
+        emailRedirectTo: 'https://vibelog-sigma.vercel.app/Dashboard',
       },
     });
   
@@ -33,7 +34,6 @@ export default function SignupPage() {
     } else {
       console.log('✅ User signed up:', data);
       alert('Check your email for verification!');
-      router.push('/Dashboard'); // or wherever you want to redirect
     }
   };  
 
