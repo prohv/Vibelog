@@ -5,12 +5,17 @@ import './Dashboard.css';
 import { useEffect, useState } from 'react';
 import { gsap } from 'gsap';
 import { useRouter } from 'next/navigation';
-import DashboardHeader from '../components/DashboardHeader'; // Using the new DashboardHeader
+import DashboardHeader from '../components/DashboardHeader';  
 import DashboardFooter from '../components/DashboardFooter'; 
+import { supabase } from '../../lib/supabaseClient';
+import { FaSpinner } from 'react-icons/fa';
+import toast from 'react-hot-toast';
+
 
 export default function Dashboard() {
   const router = useRouter();
-  const [selectedContentType, setSelectedContentType] = useState('text'); // Default to text input
+  const [selectedContentType, setSelectedContentType] = useState('audio'); 
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     // Existing purple gradient animation
@@ -47,6 +52,96 @@ export default function Dashboard() {
     };
   }, []);
 
+  // HandleAudio upload function
+  const handleUploadAudio = async () => {
+    try {
+      setUploading(true);
+      toast.loading('Uploading & processing audio...');
+  
+      const fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      fileInput.accept = 'audio/*';
+      fileInput.click();
+  
+      fileInput.onchange = async () => {
+        const file = fileInput.files[0];
+        if (!file) {
+          toast.error('No file selected.');
+          setUploading(false);
+          return;
+        }
+
+        // Show loading toast only after a file is selected
+        toast.loading('Uploading & processing audio...', { duration: Infinity });
+
+        // Validate file type
+        if (!file.type.startsWith('audio/')) {
+          toast.error('Please select a valid audio file.', { duration: 3000 });
+          setUploading(false);
+          return;
+        }
+
+        // Validate file size (20 MB limit)
+        const maxSize = 20 * 1024 * 1024; // 20 MB
+        if (file.size > maxSize) {
+          toast.error('File too large. Maximum size is 20 MB.', { duration: 3000 });
+          setUploading(false);
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append('audio', file);
+  
+        const backendUrl = `${process.env.NEXT_PUBLIC_BACKEND_URL}/upload-audio`;
+        const res = await fetch(backendUrl, {
+          method: 'POST',
+          body: formData,
+        });
+  
+        if (!res.ok) throw new Error('Backend error');
+  
+        const result = await res.json();
+        if (!result || !result.translated_text || !result.sentiment_analysis) {
+          throw new Error('Invalid response from backend');
+        }
+
+        const { data: session } = await supabase.auth.getUser();
+        const user_id = session?.user?.id;
+  
+        const { error: dbError } = await supabase.from('results').insert([
+          {
+            user_id,
+            transcript: result.translated_text,
+            sentiment: result.sentiment_analysis,
+          },
+        ]);
+  
+        if (dbError) {
+          console.error('❌ DB Error:', dbError);
+          toast.dismiss();
+          toast.error('Error saving to database.');
+        } else {
+          toast.dismiss();
+          toast.success('✅ Audio processed and saved!');
+        }
+      };
+
+      // Add an event listener for when the file input dialog is canceled
+      fileInput.oncancel = () => {
+        setUploading(false);
+      };
+  
+    } catch (err) {
+      console.error('❌ Upload error:', err);
+      toast.dismiss();
+      toast.error('Upload failed.');
+    } finally {
+      setUploading(false);
+    }
+  };
+  
+  
+
   // Function to render the dynamic input area based on selected type
   const renderInputArea = () => {
     switch (selectedContentType) {
@@ -63,7 +158,6 @@ export default function Dashboard() {
               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z" />
             </svg>
             <div className="input-action-buttons">
-              <button className="input-action-button">Record Video</button>
               <button className="input-action-button">Upload Video</button>
             </div>
           </div>
@@ -81,30 +175,15 @@ export default function Dashboard() {
               <path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.2-3c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2.8z" />
             </svg>
             <div className="input-action-buttons">
-              <button className="input-action-button">Record Audio</button>
-              <button className="input-action-button">Upload Audio</button>
+              <button
+                className="input-action-button"
+                onClick={handleUploadAudio}
+                disabled={uploading}
+              >
+                {uploading && <FaSpinner className="spin" />}
+                {uploading ? 'Uploading...' : 'Upload Audio'}
+              </button>
             </div>
-          </div>
-        );
-      case 'text':
-      default:
-        return (
-          <div className="dynamic-input-area">
-            {/* Text Icon */}
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-              className="input-option-icon text-icon"
-            >
-              <path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z" />
-            </svg>
-            <textarea
-              className="text-input-area"
-              placeholder="Start logging your vibe here..."
-              rows="5"
-            ></textarea>
-            <button className="upload-text-button">Upload Text Vibe</button>
           </div>
         );
     }
@@ -116,7 +195,7 @@ export default function Dashboard() {
       <DashboardHeader /> {/* Use the new dashboard header */}
 
       <main className="main-content dashboard-main-content-box">
-        <h1 className="vibe-log-heading">How was your day? 🤔</h1>
+        <h1 className="vibe-log-heading">How was your day? 😁</h1>
         <p className="vibe-log-subheading">Let&#39;s Log your Vibe</p>
 
         <div className="content-type-buttons-container">
@@ -131,12 +210,6 @@ export default function Dashboard() {
             onClick={() => setSelectedContentType('audio')}
           >
             Audio
-          </button>
-          <button
-            className={`content-type-button ${selectedContentType === 'text' ? 'active-content-type-button' : ''}`}
-            onClick={() => setSelectedContentType('text')}
-          >
-            Text
           </button>
         </div>
 

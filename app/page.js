@@ -38,7 +38,17 @@ export default function Home() {
       <div className="purple-gradient-element"></div>
       <Header />
       <main className="main-content">
+        <img
+          src="https://i.ibb.co/CKQTYqbY/glassmindfinal.png"
+          alt="Decorative Glass Mind Icon"
+          className="floating-image image-left"
+        />
         <GetStartedButton />
+        <img
+          src="https://i.ibb.co/7xpPF272/glassheartfinal.png"
+          alt="Decorative Glass Heart Icon"
+          className="floating-image image-right"
+        />
         <div className="main-text">
           <p>Your journey to mindful living begins here. Capture your thoughts, reflect on your day, and grow with Vibelog.</p>
         </div>
