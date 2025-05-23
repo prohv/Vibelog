@@ -1,0 +1,66 @@
+
+/* --- Dashboard Footer --- */
+.dashboard-footer-container {
+    position: relative;
+    z-index: 10;
+    width: 100%;
+    padding: 1rem 0;
+    margin: 0 auto;
+    background-color: #ffffff;
+    border-top: 1px solid #eee;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+  }
+  
+  .footer-nav-buttons-group {
+    display: flex;
+    justify-content: space-evenly;
+    width: 100%;
+    max-width: 40rem;
+    margin: 0 auto;
+  }
+  
+  .footer-nav-button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.5rem 0.75rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #7c3aed; /* Purple color for icons/text */
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: color 0.3s ease, transform 0.3s ease;
+    border-radius: 0.5rem;
+  }
+  
+  .footer-nav-button:hover {
+    color: #4c1d95;
+    transform: translateY(-2px);
+    background-color: #f3e8ff; /* Light hover background */
+  }
+  
+  .footer-button-icon {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+  
+  /* Media query for footer button text */
+  .footer-button-text {
+    display: none; /* Hidden by default on small screens */
+  }
+  
+  @media (min-width: 768px) { /* Adjust breakpoint as needed */
+    .footer-button-text {
+      display: block; /* Show text on larger screens */
+    }
+    .footer-nav-button {
+      padding: 0.75rem 1rem; /* More padding on larger screens */
+    }
+    .footer-button-icon {
+      width: 2rem;
+      height: 2rem;
+    }
+  }
+  

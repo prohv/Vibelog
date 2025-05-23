@@ -1,6 +1,8 @@
 import React from 'react';
+import { useRouter } from 'next/navigation';
 
 const Header = () => {
+  const router = useRouter();
   return (
     <header className="header">
       <div className="logo-container">
@@ -19,7 +21,7 @@ const Header = () => {
         <h1 className="logo-text">Vibelog</h1>
       </div>
       <div className="nav-buttons">
-        <button className="sign-up-button">Sign Up</button>
+        <button className="sign-up-button" onClick={() => router.push('/signup')}>Sign Up</button>
         <button className="login-button">Login</button>
       </div>
     </header>

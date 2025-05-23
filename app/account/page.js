@@ -5,7 +5,7 @@ import './account.css';
 import { useEffect } from 'react';
 import { gsap } from 'gsap';
 import DashboardHeader from '../components/DashboardHeader'; 
-import Footer from '../components/Footer';
+import DashboardFooter from '../components/DashboardFooter';
 
 export default function Account() {
   useEffect(() => {
@@ -87,7 +87,7 @@ export default function Account() {
         <button className="save-settings-button">Save Settings</button>
       </main>
 
-      <Footer />
+      <DashboardFooter />
     </div>
   );
 }
