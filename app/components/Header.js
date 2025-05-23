@@ -22,7 +22,7 @@ const Header = () => {
       </div>
       <div className="nav-buttons">
         <button className="sign-up-button" onClick={() => router.push('/signup')}>Sign Up</button>
-        <button className="login-button">Login</button>
+        <button className="login-button" onClick={() => router.push('/login')}>Login</button>
       </div>
     </header>
   );
